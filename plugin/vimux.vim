@@ -25,15 +25,15 @@ function! VimuxRunCommandInDir(command, useFile)
 endfunction
 
 function! VimuxRunLastCommand()
-  if exists("g:VimuxRunnerIndex")
+  if _VimuxHasRunner()
     call VimuxRunCommand(g:VimuxLastCommand)
   else
-    echo "No last vimux command."
+    call _VimuxEchoNoRunner()
   endif
 endfunction
 
 function! VimuxRunCommand(command, ...)
-  if !exists("g:VimuxRunnerIndex") || _VimuxHasRunner(g:VimuxRunnerIndex) == -1
+  if !_VimuxHasRunner()
     call VimuxOpenRunner()
   endif
 
@@ -58,10 +58,10 @@ function! VimuxSendText(text)
 endfunction
 
 function! VimuxSendKeys(keys)
-  if exists("g:VimuxRunnerIndex")
+  if _VimuxHasRunner()
     call _VimuxTmux("send-keys -t ".g:VimuxRunnerIndex." ".a:keys)
   else
-    echo "No vimux runner pane/window. Create one with VimuxOpenRunner"
+    call _VimuxEchoNoRunner()
   endif
 endfunction
 
@@ -86,49 +86,63 @@ function! VimuxOpenRunner()
 endfunction
 
 function! VimuxCloseRunner()
-  if exists("g:VimuxRunnerIndex")
+  if _VimuxHasRunner()
     call _VimuxTmux("kill-"._VimuxRunnerType()." -t ".g:VimuxRunnerIndex)
     unlet g:VimuxRunnerIndex
+  else
+    call _VimuxEchoNoRunner()
   endif
 endfunction
 
 function! VimuxTogglePane()
-  if exists("g:VimuxRunnerIndex")
+  if _VimuxHasRunner()
     if _VimuxRunnerType() == "window"
-        call _VimuxTmux("join-pane -d -s ".g:VimuxRunnerIndex." -p "._VimuxOption("g:VimuxHeight", 20))
-        let g:VimuxRunnerType = "pane"
+      call _VimuxTmux("join-pane -d -s ".g:VimuxRunnerIndex." -p "._VimuxOption("g:VimuxHeight", 20))
+      let g:VimuxRunnerType = "pane"
     elseif _VimuxRunnerType() == "pane"
-		let g:VimuxRunnerIndex=substitute(_VimuxTmux("break-pane -d -t ".g:VimuxRunnerIndex." -P -F '#{window_index}'"), "\n", "", "")
-        let g:VimuxRunnerType = "window"
+      let g:VimuxRunnerIndex = substitute(_VimuxTmux("break-pane -d -t ".g:VimuxRunnerIndex." -P -F '#{window_index}'"), "\n", "", "")
+      let g:VimuxRunnerType = "window"
     endif
+  else
+    call _VimuxEchoNoRunner()
   endif
 endfunction
 
 function! VimuxZoomRunner()
-  if exists("g:VimuxRunnerIndex")
+  if _VimuxHasRunner()
     if _VimuxRunnerType() == "pane"
       call _VimuxTmux("resize-pane -Z -t ".g:VimuxRunnerIndex)
     elseif _VimuxRunnerType() == "window"
       call _VimuxTmux("select-window -t ".g:VimuxRunnerIndex)
     endif
+  else
+    call _VimuxEchoNoRunner()
   endif
 endfunction
 
 function! VimuxInspectRunner()
-  call _VimuxTmux("select-"._VimuxRunnerType()." -t ".g:VimuxRunnerIndex)
-  call _VimuxTmux("copy-mode")
+  if _VimuxHasRunner()
+    call _VimuxTmux("select-"._VimuxRunnerType()." -t ".g:VimuxRunnerIndex)
+    call _VimuxTmux("copy-mode")
+    return v:true
+  else
+    call _VimuxEchoNoRunner()
+    return v:false
+  endif
 endfunction
 
 function! VimuxScrollUpInspect()
-  call VimuxInspectRunner()
-  call _VimuxTmux("last-"._VimuxRunnerType())
-  call VimuxSendKeys("C-u")
+  if VimuxInspectRunner()
+    call _VimuxTmux("last-"._VimuxRunnerType())
+    call VimuxSendKeys("C-u")
+  endif
 endfunction
 
 function! VimuxScrollDownInspect()
-  call VimuxInspectRunner()
-  call _VimuxTmux("last-"._VimuxRunnerType())
-  call VimuxSendKeys("C-d")
+  if VimuxInspectRunner()
+    call _VimuxTmux("last-"._VimuxRunnerType())
+    call VimuxSendKeys("C-d")
+  endif
 endfunction
 
 function! VimuxInterruptRunner()
@@ -136,8 +150,10 @@ function! VimuxInterruptRunner()
 endfunction
 
 function! VimuxClearRunnerHistory()
-  if exists("g:VimuxRunnerIndex")
+  if _VimuxHasRunner()
     call _VimuxTmux("clear-history -t ".g:VimuxRunnerIndex)
+  else
+    call _VimuxEchoNoRunner()
   endif
 endfunction
 
@@ -200,6 +216,16 @@ function! _VimuxTmuxProperty(property)
     return substitute(_VimuxTmux("display -p '".a:property."'"), '\n$', '', '')
 endfunction
 
-function! _VimuxHasRunner(index)
-  return match(_VimuxTmux("list-"._VimuxRunnerType()."s -a"), a:index.":")
+function! _VimuxHasRunner()
+  if !exists('g:VimuxRunnerIndex')
+    return v:false
+  endif
+  if match(_VimuxTmux("list-"._VimuxRunnerType()."s -a"), g:VimuxRunnerIndex.":") == -1
+    return v:false
+  endif
+  return v:true
+endfunction
+
+function! _VimuxEchoNoRunner()
+  echo "No vimux runner pane/window. Create one with VimuxOpenRunner"
 endfunction
