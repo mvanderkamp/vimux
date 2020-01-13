@@ -100,7 +100,7 @@ function! VimuxTogglePane()
       call _VimuxTmux("join-pane -d -s ".g:VimuxRunnerIndex." -p "._VimuxOption("g:VimuxHeight", 20))
       let g:VimuxRunnerType = "pane"
     elseif _VimuxRunnerType() == "pane"
-      let g:VimuxRunnerIndex = substitute(_VimuxTmux("break-pane -d -t ".g:VimuxRunnerIndex." -P -F '#{window_index}'"), "\n", "", "")
+      let g:VimuxRunnerIndex = _VimuxTmux("break-pane -d -t ".g:VimuxRunnerIndex." -P -F "._VimuxRunnerIdFormat())[0]
       let g:VimuxRunnerType = "window"
     endif
   else
@@ -165,31 +165,15 @@ endfunction
 
 function! _VimuxTmux(arguments)
   let l:command = _VimuxOption("g:VimuxTmuxCommand", "tmux")
-  return system(l:command." ".a:arguments)
-endfunction
-
-function! _VimuxTmuxSession()
-  return _VimuxTmuxProperty("#S")
+  return systemlist(l:command." ".a:arguments)
 endfunction
 
 function! _VimuxTmuxIndex()
-  if _VimuxRunnerType() == "pane"
-    return _VimuxTmuxPaneIndex()
-  else
-    return _VimuxTmuxWindowIndex()
-  end
-endfunction
-
-function! _VimuxTmuxPaneIndex()
-  return _VimuxTmuxProperty("#I.#P")
-endfunction
-
-function! _VimuxTmuxWindowIndex()
-  return _VimuxTmuxProperty("#I")
+  return _VimuxTmuxProperty(_VimuxRunnerIdFormat())
 endfunction
 
 function! _VimuxNearestIndex()
-  let views = split(_VimuxTmux("list-"._VimuxRunnerType()."s"), "\n")
+  let views = _VimuxTmux("list-"._VimuxRunnerType()."s")
 
   for view in views
     if match(view, "(active)") == -1
@@ -213,19 +197,35 @@ function! _VimuxOption(option, default)
 endfunction
 
 function! _VimuxTmuxProperty(property)
-    return substitute(_VimuxTmux("display -p '".a:property."'"), '\n$', '', '')
+    return _VimuxTmux("display -p ".a:property)[0]
 endfunction
 
-function! _VimuxHasRunner()
-  if !exists('g:VimuxRunnerIndex')
-    return v:false
+function! _VimuxHasRunner(index = v:false)
+  if a:index == v:false
+    if !exists('g:VimuxRunnerIndex')
+      return v:false
+    endif
+    let runner_index = g:VimuxRunnerIndex
+  else
+    let runner_index = a:index
   endif
-  if match(_VimuxTmux("list-"._VimuxRunnerType()."s -a"), g:VimuxRunnerIndex.":") == -1
+
+  let panes = _VimuxTmux("list-"._VimuxRunnerType()."s -F "._VimuxRunnerIdFormat())
+
+  if index(panes, runner_index) == -1
+    if exists('g:VimuxRunnerIndex')
+      " It should not exist, so remove it.
+      unlet g:VimuxRunnerIndex
+    endif
     return v:false
   endif
   return v:true
 endfunction
 
 function! _VimuxEchoNoRunner()
-  echo "No vimux runner pane/window. Create one with VimuxOpenRunner"
+  echo "No vimux runner pane/window. Create one with VimuxOpenRunner."
+endfunction
+
+function! _VimuxRunnerIdFormat()
+    return '"#{'._VimuxRunnerType().'_id}"'
 endfunction
