@@ -3,18 +3,27 @@ if exists("g:loaded_vimux") || &cp
 endif
 let g:loaded_vimux = 1
 
-command -nargs=* VimuxRunCommand :call VimuxRunCommand(<args>)
-command VimuxRunLastCommand :call VimuxRunLastCommand()
-command VimuxOpenRunner :call VimuxOpenRunner()
-command VimuxCloseRunner :call VimuxCloseRunner()
-command VimuxZoomRunner :call VimuxZoomRunner()
-command VimuxInspectRunner :call VimuxInspectRunner()
-command VimuxScrollUpInspect :call VimuxScrollUpInspect()
-command VimuxScrollDownInspect :call VimuxScrollDownInspect()
-command VimuxInterruptRunner :call VimuxInterruptRunner()
+let g:VimuxHeight        = get(g:, "VimuxHeight",        20)
+let g:VimuxOpenExtraArgs = get(g:, "VimuxOpenExtraArgs", " ")
+let g:VimuxOrientation   = get(g:, "VimuxOrientation",   "v")
+let g:VimuxPromptString  = get(g:, "VimuxPromptString",  "Command? ")
+let g:VimuxResetSequence = get(g:, "VimuxResetSequence", "q C-u")
+let g:VimuxRunnerType    = get(g:, "VimuxRunnerType",    "pane")
+let g:VimuxTmuxCommand   = get(g:, "VimuxTmuxCommand",   "tmux")
+let g:VimuxUseNearest    = get(g:, "VimuxUseNearest",    1)
+
+command -nargs=* VimuxRunCommand    :call VimuxRunCommand(<args>)
+command VimuxRunLastCommand         :call VimuxRunLastCommand()
+command VimuxOpenRunner             :call VimuxOpenRunner()
+command VimuxCloseRunner            :call VimuxCloseRunner()
+command VimuxZoomRunner             :call VimuxZoomRunner()
+command VimuxInspectRunner          :call VimuxInspectRunner()
+command VimuxScrollUpInspect        :call VimuxScrollUpInspect()
+command VimuxScrollDownInspect      :call VimuxScrollDownInspect()
+command VimuxInterruptRunner        :call VimuxInterruptRunner()
 command -nargs=? VimuxPromptCommand :call VimuxPromptCommand(<args>)
-command VimuxClearRunnerHistory :call VimuxClearRunnerHistory()
-command VimuxTogglePane :call VimuxTogglePane()
+command VimuxClearRunnerHistory     :call VimuxClearRunnerHistory()
+command VimuxTogglePane             :call VimuxTogglePane()
 
 function! VimuxRunCommandInDir(command, useFile)
     let l:file = ""
@@ -42,7 +51,7 @@ function! VimuxRunCommand(command, ...)
     let l:autoreturn = a:1
   endif
 
-  let resetSequence = _VimuxOption("g:VimuxResetSequence", "q C-u")
+  let resetSequence = g:VimuxResetSequence
   let g:VimuxLastCommand = a:command
 
   call VimuxSendKeys(resetSequence)
@@ -68,13 +77,13 @@ endfunction
 function! VimuxOpenRunner()
   let nearestIndex = _VimuxNearestIndex()
 
-  if _VimuxOption("g:VimuxUseNearest", 1) == 1 && nearestIndex != -1
+  if g:VimuxUseNearest == 1 && nearestIndex != -1
     let g:VimuxRunnerIndex = nearestIndex
   else
-    let extraArguments = _VimuxOption("g:VimuxOpenExtraArgs", " ")
+    let extraArguments = g:VimuxOpenExtraArgs
     if _VimuxRunnerType() == "pane"
-      let height = _VimuxOption("g:VimuxHeight", 20)
-      let orientation = _VimuxOption("g:VimuxOrientation", "v")
+      let height = g:VimuxHeight
+      let orientation = g:VimuxOrientation
       call _VimuxTmux("split-window -p ".height." -".orientation." ".extraArguments)
     elseif _VimuxRunnerType() == "window"
       call _VimuxTmux("new-window ".extraArguments)
@@ -97,7 +106,7 @@ endfunction
 function! VimuxTogglePane()
   if _VimuxHasRunner()
     if _VimuxRunnerType() == "window"
-      call _VimuxTmux("join-pane -d -s ".g:VimuxRunnerIndex." -p "._VimuxOption("g:VimuxHeight", 20))
+      call _VimuxTmux("join-pane -d -s ".g:VimuxRunnerIndex." -p ".g:VimuxHeight)
       let g:VimuxRunnerType = "pane"
     elseif _VimuxRunnerType() == "pane"
       let g:VimuxRunnerIndex = _VimuxTmux("break-pane -d -t ".g:VimuxRunnerIndex." -P -F "._VimuxRunnerIdFormat())[0]
@@ -159,12 +168,12 @@ endfunction
 
 function! VimuxPromptCommand(...)
   let command = a:0 == 1 ? a:1 : ""
-  let l:command = input(_VimuxOption("g:VimuxPromptString", "Command? "), command)
+  let l:command = input(g:VimuxPromptString, command)
   call VimuxRunCommand(l:command)
 endfunction
 
 function! _VimuxTmux(arguments)
-  let l:command = _VimuxOption("g:VimuxTmuxCommand", "tmux")
+  let l:command = g:VimuxTmuxCommand
   return systemlist(l:command." ".a:arguments)
 endfunction
 
@@ -185,15 +194,7 @@ function! _VimuxNearestIndex()
 endfunction
 
 function! _VimuxRunnerType()
-  return _VimuxOption("g:VimuxRunnerType", "pane")
-endfunction
-
-function! _VimuxOption(option, default)
-  if exists(a:option)
-    return eval(a:option)
-  else
-    return a:default
-  endif
+  return g:VimuxRunnerType
 endfunction
 
 function! _VimuxTmuxProperty(property)
