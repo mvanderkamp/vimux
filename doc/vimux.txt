@@ -374,5 +374,15 @@ you're using panes or windows, and your version of tmux.
 
 Default: "tmux"
 
+------------------------------------------------------------------------------
+                                                              *VimuxPromptString"
+2.9 g:VimuxPromptString~
+
+String to use as a prompt when asking for a command to run in the runner.
+
+  let g:VimuxPromptString = "vimux> "
+
+Default: "Command? "
+
 ==============================================================================
 vim:tw=78:ts=2:sw=2:expandtab:ft=help:norl:
