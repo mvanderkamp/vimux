@@ -3,6 +3,7 @@ if exists("g:loaded_vimux") || &cp
 endif
 let g:loaded_vimux = 1
 
+
 let g:VimuxHeight        = get(g:, "VimuxHeight",        20)
 let g:VimuxOpenExtraArgs = get(g:, "VimuxOpenExtraArgs", " ")
 let g:VimuxOrientation   = get(g:, "VimuxOrientation",   "v")
@@ -11,6 +12,7 @@ let g:VimuxResetSequence = get(g:, "VimuxResetSequence", "q C-u")
 let g:VimuxRunnerType    = get(g:, "VimuxRunnerType",    "pane")
 let g:VimuxTmuxCommand   = get(g:, "VimuxTmuxCommand",   "tmux")
 let g:VimuxUseNearest    = get(g:, "VimuxUseNearest",    1)
+
 
 command -nargs=* VimuxRunCommand    :call VimuxRunCommand(<args>)
 command VimuxRunLastCommand         :call VimuxRunLastCommand()
@@ -54,7 +56,7 @@ function! VimuxRunCommand(command, ...)
   call VimuxSendText(a:command)
   let g:VimuxLastCommand = a:command
 
-  if get(a:, 1, v:false)
+  if get(a:, 1, v:true)
     call VimuxSendKeys("Enter")
   endif
 endfunction
@@ -112,7 +114,7 @@ function! VimuxTogglePane()
       call VimuxTmux("join-pane -s " .. g:VimuxRunnerIndex .. " -t" .. VimuxTmuxIndex() .. " -p " .. g:VimuxHeight)
     elseif g:VimuxRunnerType == "pane"
       let g:VimuxRunnerType = "window"
-      call VimuxTmux("break-pane -s " .. g:VimuxRunnerIndex)
+      call VimuxTmux("break-pane -s " .. g:VimuxRunnerIndex .. " -n vimux")
     else
       echoerr "Invalid option value: g:VimuxRunnerType = " .. g:VimuxRunnerType
       return
@@ -244,6 +246,12 @@ function! VimuxHasRunner(index = v:false)
     return v:false
   endif
   return v:true
+endfunction
+
+
+" Just here for compatibility...
+function! _VimuxHasRunner(index = v:false)
+    return VimuxHasRunner(a:index)
 endfunction
 
 
