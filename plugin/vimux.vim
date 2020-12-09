@@ -11,7 +11,8 @@ let g:VimuxPromptString  = get(g:, "VimuxPromptString",  "Command? ")
 let g:VimuxResetSequence = get(g:, "VimuxResetSequence", "q C-u")
 let g:VimuxRunnerType    = get(g:, "VimuxRunnerType",    "pane")
 let g:VimuxTmuxCommand   = get(g:, "VimuxTmuxCommand",   "tmux")
-let g:VimuxUseNearest    = get(g:, "VimuxUseNearest",    1)
+let g:VimuxUseNearest    = get(g:, "VimuxUseNearest",    v:true)
+let g:VimuxCloseOnExit   = get(g:, "VimuxCloseOnExit",   v:false)
 
 
 command -nargs=* VimuxRunCommand    :call VimuxRunCommand(<args>)
@@ -27,6 +28,14 @@ command VimuxInterruptRunner        :call VimuxInterruptRunner()
 command -nargs=? VimuxPromptCommand :call VimuxPromptCommand(<args>)
 command VimuxClearRunnerHistory     :call VimuxClearRunnerHistory()
 command VimuxTogglePane             :call VimuxTogglePane()
+
+
+if g:VimuxCloseOnExit
+    augroup VimuxAutocloseCommands
+        au!
+        autocmd VimLeave * call VimuxCloseRunner()
+    augroup END
+endif
 
 
 function! VimuxRunCommandInDir(command, useFile)

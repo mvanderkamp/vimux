@@ -375,7 +375,7 @@ you're using panes or windows, and your version of tmux.
 Default: "tmux"
 
 ------------------------------------------------------------------------------
-                                                              *VimuxPromptString"
+                                                              *VimuxPromptString*
 2.9 g:VimuxPromptString~
 
 String to use as a prompt when asking for a command to run in the runner.
@@ -383,6 +383,17 @@ String to use as a prompt when asking for a command to run in the runner.
   let g:VimuxPromptString = "vimux> "
 
 Default: "Command? "
+
+------------------------------------------------------------------------------
+                                                              *VimuxCloseOnExit*
+2.1 g:VimuxCloseOnExit~
+
+If true, vimux will automatically close the runner pane when vim exits.
+Careful! Pane contents will be lost!
+
+  let g:VimuxCloseOnExit = v:true
+
+Default: v:false
 
 ==============================================================================
 vim:tw=78:ts=2:sw=2:expandtab:ft=help:norl:
