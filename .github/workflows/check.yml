@@ -37,7 +37,7 @@ jobs:
       - name: "Try Vimux"
         run: |
           ec="$(mktemp)"
-          tmux new -s ci -d "${{ matrix.vimFlavor == 'neovim' && 'nvim -u /dev/null --headless' || 'vim' }} -i NONE \"+so plugin/vimux.vim\" \"+VimuxRunCommand('date')\" \"+VimuxCloseRunner | qa\"; echo \$? > '$ec'"
+          tmux new -s ci -d "${{ matrix.vimFlavor == 'neovim' && 'nvim -u /dev/null --headless' || 'vim' }} -i NONE \"+so plugin/vimux.vim\" \"+call VimuxRunCommand('date')\" \"+VimuxCloseRunner | qa\"; echo \$? > '$ec'"
           sleep 5
           tmux kill-session -t ci && exit 1
           exit "$(cat $ec)"
